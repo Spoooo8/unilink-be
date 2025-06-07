@@ -1,0 +1,34 @@
+package com.unilink.quiz_service.entity.users;
+
+import com.unilink.common.entity.BaseEntity;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "tbl_user_skill_mapping", schema = "users")
+public class UserSkillMapping extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Boolean isPrimarySkill;
+    private String interestLevel;
+    private Double yearsOfExperience;
+    private Integer endorsementCount;
+    private String proficiencyLevel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_id", nullable = false)
+    private Skill skill;
+
+}

@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/unilink_db
+    username: postgres
+    password: 299792
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    format_sql: true
+
+api:
+  prefix: /api/v1
+
+server:
+  port: 8080
