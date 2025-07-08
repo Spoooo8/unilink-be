@@ -1,5 +1,9 @@
 package com.unilink.project_service.service;
 
+import com.unilink.common.exceptions.UnilinkBadRequestException;
+import com.unilink.common.exceptions.UnilinkResourceNotFoundException;
+import com.unilink.project_service.entity.project.Project;
+import com.unilink.project_service.repository.project.ProjectRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -10,6 +14,7 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -24,6 +29,77 @@ import java.util.List;
 @Service
 public class VersionControlService {
     private static final Logger logger = LoggerFactory.getLogger(VersionControlService.class);
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    public void cloneRepository(Long projectId) throws GitAPIException, IOException {
+        Project project = projectRepository.findById(projectId).orElseThrow(()-> new UnilinkResourceNotFoundException("project not found"));
+        String remoteUrl = project.getRepoLink();
+        if (remoteUrl == null || remoteUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("Remote URL cannot be null or empty");
+        }
+
+        String repoPath = getRepoBasePath(remoteUrl);
+        File repoDir = new File(repoPath);
+
+        if (repoDir.exists()) {
+            throw new UnilinkBadRequestException("Repository directory already exists for: " + repoPath);
+        }
+        if (!repoDir.mkdirs()) {
+            throw new UnilinkBadRequestException("Failed to create directory: " + repoDir.getAbsolutePath());
+        }
+
+        try (Git git = Git.cloneRepository()
+                .setURI(remoteUrl)
+                .setDirectory(repoDir)
+                .call()) {
+            logger.info("Cloned repository from {} to {}", remoteUrl, repoDir.getAbsolutePath());
+        }
+    }
+
+    public List<String> getCommitHistory(Long projectId) throws IOException, GitAPIException {
+        List<String> history = new ArrayList<>();
+        Project project = projectRepository.findById(projectId).orElseThrow(()-> new UnilinkResourceNotFoundException("project not found"));
+        String remoteUrl = project.getRepoLink();
+        File repoBase = new File(getRepoBasePath(remoteUrl));
+        File gitDir = new File(repoBase, ".git");
+
+        if (!gitDir.exists()) {
+            System.out.println("Cloning repository to " + repoBase.getAbsolutePath());
+
+            Git.cloneRepository()
+                    .setURI(remoteUrl)
+                    .setDirectory(repoBase)
+                    .setCloneAllBranches(true)
+                    .call();
+        }
+
+        // Open the repository
+        try (Repository repository = new FileRepositoryBuilder()
+                .setGitDir(gitDir)
+                .readEnvironment()
+                .findGitDir()
+                .build();
+             Git git = new Git(repository)) {
+
+            ObjectId head = repository.resolve("HEAD");
+            if (head == null) {
+                throw new IllegalStateException("Repository has no HEAD — probably no commits exist.");
+            }
+
+            Iterable<RevCommit> commits = git.log().call(); // .all() not needed unless you want history from all refs
+
+            for (RevCommit commit : commits) {
+                history.add(commit.getFullMessage()
+                        + " by " + commit.getAuthorIdent().getName()
+                        + " at " + Instant.ofEpochSecond(commit.getCommitTime()));
+            }
+        }
+
+        return history;
+    }
+
 
     // Extracts repo name from URL
     private String extractRepoName(String remoteUrl) {
@@ -98,72 +174,6 @@ public class VersionControlService {
             git.branchCreate()
                     .setName(branchName)
                     .call();
-        }
-    }
-
-    public List<String> getCommitHistory(String remoteUrl) throws IOException, GitAPIException {
-        List<String> history = new ArrayList<>();
-
-        File repoBase = new File(getRepoBasePath(remoteUrl));
-        File gitDir = new File(repoBase, ".git");
-
-        // If repo doesn't exist, clone it
-        if (!gitDir.exists()) {
-            System.out.println("Cloning repository to " + repoBase.getAbsolutePath());
-
-            Git.cloneRepository()
-                    .setURI(remoteUrl)
-                    .setDirectory(repoBase)
-                    .setCloneAllBranches(true)
-                    .call();
-        }
-
-        // Open the repository
-        try (Repository repository = new FileRepositoryBuilder()
-                .setGitDir(gitDir)
-                .readEnvironment()
-                .findGitDir()
-                .build();
-             Git git = new Git(repository)) {
-
-            ObjectId head = repository.resolve("HEAD");
-            if (head == null) {
-                throw new IllegalStateException("Repository has no HEAD — probably no commits exist.");
-            }
-
-            Iterable<RevCommit> commits = git.log().call(); // .all() not needed unless you want history from all refs
-
-            for (RevCommit commit : commits) {
-                history.add(commit.getFullMessage()
-                        + " by " + commit.getAuthorIdent().getName()
-                        + " at " + Instant.ofEpochSecond(commit.getCommitTime()));
-            }
-        }
-
-        return history;
-    }
-
-
-    public void cloneRepository(String remoteUrl) throws GitAPIException, IOException {
-        if (remoteUrl == null || remoteUrl.trim().isEmpty()) {
-            throw new IllegalArgumentException("Remote URL cannot be null or empty");
-        }
-
-        String repoPath = getRepoBasePath(remoteUrl);
-        File repoDir = new File(repoPath);
-
-        if (repoDir.exists()) {
-            throw new IllegalStateException("Repository directory already exists for: " + repoPath);
-        }
-        if (!repoDir.mkdirs()) {
-            throw new IOException("Failed to create directory: " + repoDir.getAbsolutePath());
-        }
-
-        try (Git git = Git.cloneRepository()
-                .setURI(remoteUrl)
-                .setDirectory(repoDir)
-                .call()) {
-            logger.info("Cloned repository from {} to {}", remoteUrl, repoDir.getAbsolutePath());
         }
     }
 

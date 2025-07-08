@@ -21,5 +21,5 @@ public class UserProfileResponse {
     private String portfolioUrl;
     private String githubUrl;
     private Boolean mentorStatus;
-    private List<String> skills;
+    private List<SkillDto> skills;
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
@@ -14,4 +15,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     Optional<Project> findByIdAndIsDeactivated(Long id, boolean active);
     List<Project> findByUserIdAndIsDeactivated(Long userId, boolean isDeactivated);
 
+    List<Project> findAllByTeamIdIn(List<Long> teamIds);
+
+    List<Project> findByTeamIdNotInAndIsDeactivated(Set<Long> teamIds, boolean b);
 }

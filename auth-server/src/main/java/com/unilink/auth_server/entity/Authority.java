@@ -22,9 +22,9 @@ public class Authority {
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "auth_profile_id")
+    @JoinColumn(name = "user_id")
     @JsonBackReference
-    private AuthProfile authProfile;
+    private Users user;
 
 
 

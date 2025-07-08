@@ -11,7 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(schema = "project", name = "commit_request")
+@Table(schema = "projects", name = "commit_request")
 public class CommitRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

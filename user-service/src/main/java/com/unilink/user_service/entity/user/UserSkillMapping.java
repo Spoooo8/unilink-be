@@ -14,9 +14,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @Table(name = "tbl_user_skill_mapping", schema = "users")
 public class UserSkillMapping extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private Boolean isPrimarySkill;
     private String interestLevel;
     private Double yearsOfExperience;
@@ -24,8 +26,8 @@ public class UserSkillMapping extends BaseEntity {
     private String proficiencyLevel;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Users user;
+    @JoinColumn(name = "user_details_id", nullable = false)
+    private UserDetails userDetails;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "skill_id", nullable = false)

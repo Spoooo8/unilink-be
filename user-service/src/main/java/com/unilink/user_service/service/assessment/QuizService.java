@@ -28,7 +28,7 @@ public class QuizService  {
     public List<QuizResponseDTO> getAllInternalQuiz() {
         List<Quiz> domains = quizRepository.findByIsDeactivatedAndIsExternalHost(false, false);
         return domains.stream()
-                .map(domain -> new QuizResponseDTO(domain.getId(), domain.getName(), domain.getIcon(), domain.getColor(), domain.getTimer(), domain.getIsExternalHost()))
+                .map(domain -> new QuizResponseDTO(domain.getId(), domain.getName(), domain.getTimer(), domain.getIsExternalHost()))
                 .collect(Collectors.toList());
     }
 

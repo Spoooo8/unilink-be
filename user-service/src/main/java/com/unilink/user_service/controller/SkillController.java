@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("$/skill")
+@RequestMapping("/skill")
 public class SkillController {
     Logger logger = LoggerFactory.getLogger(SkillController.class);
 

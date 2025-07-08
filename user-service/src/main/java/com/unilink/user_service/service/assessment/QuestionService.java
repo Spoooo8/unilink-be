@@ -4,15 +4,19 @@ package com.unilink.user_service.service.assessment;
 import com.unilink.common.config.UserContext;
 import com.unilink.common.exceptions.UnilinkBadRequestException;
 import com.unilink.common.exceptions.UnilinkResourceNotFoundException;
+import com.unilink.user_service.config.UserContextId;
 import com.unilink.user_service.dto.assessment.*;
 import com.unilink.user_service.entity.assessment.Level;
 import com.unilink.user_service.entity.assessment.Question;
 import com.unilink.user_service.entity.assessment.Quiz;
+import com.unilink.user_service.entity.user.UserDetails;
 import com.unilink.user_service.entity.user.Users;
 import com.unilink.user_service.repository.assessment.LevelRepository;
 import com.unilink.user_service.repository.assessment.QuestionRepository;
 import com.unilink.user_service.repository.assessment.QuizRepository;
+import com.unilink.user_service.repository.user.UserDetailsRepository;
 import com.unilink.user_service.repository.user.UsersRepository;
+import com.unilink.user_service.service.user.UserDetailsService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,7 +43,10 @@ public class QuestionService   {
     @Autowired
     private UsersRepository usersRepository;
     @Autowired
-    private UserContext userContext;
+    private UserContextId userContext;
+
+    @Autowired
+    private UserDetailsRepository userDetailsRepository;
 
 
     public List<QuestionDTO> getQuestionsByQuizId(Long quizId) {
@@ -112,6 +119,7 @@ public class QuestionService   {
             throw new IllegalArgumentException("Answer list cannot be empty.");
         }
 
+        int totalQuestions = submittedAnswers.size(); // Total attempted questions
         for (SubmitQuestionDTO submitQuestionDTO : submittedAnswers) {
             Long questionId = submitQuestionDTO.getQuestionId();
             Integer chosenOption = submitQuestionDTO.getChosenOption();
@@ -124,16 +132,21 @@ public class QuestionService   {
             }
         }
 
-        Optional<Users> existingUser = usersRepository.findById(Long.valueOf(userContext.getUserId()));
-        if(existingUser.isEmpty()){
-            throw new UnilinkBadRequestException("no user found ");
+        Optional<UserDetails> existingUserDetails = userDetailsRepository.findByUserId(Long.valueOf(userContext.getUserId()));
+        if (existingUserDetails.isEmpty()) {
+            throw new UnilinkBadRequestException("No user found");
         }
 
-        existingUser.get().setSkillsScore((double) totalScore);
-        usersRepository.save(existingUser.get());
+        existingUserDetails.get().setSkillsScore((double) totalScore);
+        userDetailsRepository.save(existingUserDetails.get());
 
-        return new QuizResultDTO(quizId, totalScore);
+        // Calculate pass/fail based on 60%
+        boolean isPassed = totalScore >= Math.ceil(0.6 * totalQuestions);
+
+        // Return QuizResultDTO with pass/fail
+        return new QuizResultDTO(quizId, totalScore, isPassed);
     }
+
 
 
 

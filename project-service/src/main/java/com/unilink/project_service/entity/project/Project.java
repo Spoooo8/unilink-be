@@ -2,6 +2,7 @@ package com.unilink.project_service.entity.project;
 
 import com.unilink.common.entity.BaseEntity;
 
+import com.unilink.project_service.utils.ComplexityLevel;
 import com.unilink.project_service.utils.ProjectStatus;
 import com.unilink.project_service.utils.ProjectVisibility;
 import jakarta.persistence.*;
@@ -25,17 +26,18 @@ public class Project extends BaseEntity {
     private Long id;
     private Long userId;
     private String title;
+    private String repoLink;
     private String description;
     private LocalDate startDate;
     private LocalDate endDate;
     private String imageUrl;
-    private String complexityLevel;
+    private ComplexityLevel complexityLevel;
     private ProjectVisibility visibility;
     private LocalDate applicationDeadline;
     private Double progress;
     private Double rating;
-    private String projectType;
     private ProjectStatus projectStatus;
+    private ProjectVisibility projectVisibility;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<SkillRequired> skillRequired;

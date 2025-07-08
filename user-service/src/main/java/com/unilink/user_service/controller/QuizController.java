@@ -25,12 +25,12 @@ public class QuizController {
     @Autowired
     private LevelService levelService;
 
-    @GetMapping("/quiz")
+    @GetMapping
     public List<QuizResponseDTO> getAllInternalQuiz() {
         return quizService.getAllInternalQuiz();
     }
 
-    @PostMapping("/quiz")
+    @PostMapping
     public ResponseEntity<ResponseDTO> addQuiz(@RequestBody QuizRequestDTO quizDomainDTO) {
          quizService.addQuiz(quizDomainDTO);
          return  ResponseEntity
@@ -38,9 +38,9 @@ public class QuizController {
                  .body(new ResponseDTO(Constants.STATUS_201, Constants.Quiz_201));
     }
 
-        @PutMapping("/quiz/{quizId}")
-        public ResponseEntity<ResponseDTO> updateQuiz(@PathVariable("quizId") Long quizId, @RequestBody QuizRequestDTO quizDomainDTO) {
-            boolean isUpdated = quizService.updateQuiz(quizId, quizDomainDTO);
+        @PutMapping("{assessmentId}")
+        public ResponseEntity<ResponseDTO> updateQuiz(@PathVariable("assessmentId") Long assessmentId, @RequestBody QuizRequestDTO quizDomainDTO) {
+            boolean isUpdated = quizService.updateQuiz(assessmentId, quizDomainDTO);
         if(isUpdated) {
             return ResponseEntity
                     .status(HttpStatus.OK)
@@ -52,9 +52,9 @@ public class QuizController {
         }
     }
 
-    @DeleteMapping("/quiz/{quizId}")
-    public ResponseEntity<ResponseDTO> deleteQuiz(@PathVariable("quizId") Long quizId) {
-        boolean isDeleted = quizService.deleteQuiz(quizId);
+    @DeleteMapping("/{assessmentId}")
+    public ResponseEntity<ResponseDTO> deleteQuiz(@PathVariable("assessmentId") Long assessmentId) {
+        boolean isDeleted = quizService.deleteQuiz(assessmentId);
         if(isDeleted) {
             return ResponseEntity
                     .status(HttpStatus.OK)
@@ -66,9 +66,9 @@ public class QuizController {
         }
     }
 
-    @GetMapping("/questions")
-    public List<QuestionDTO> getQuestionsByQuizId(@RequestParam("quizId") Long quizId) {
-        return questionService.getQuestionsByQuizId(quizId);
+    @GetMapping("/{assessmentId}/questions")
+    public List<QuestionDTO> getQuestionsByQuizId(@PathVariable("assessmentId") Long assessmentId) {
+        return questionService.getQuestionsByQuizId(assessmentId);
     }
 
     @PostMapping("/questions")
@@ -149,7 +149,7 @@ public class QuizController {
         }
     }
 
-    @PostMapping(("/quiz/submit"))
+    @PostMapping(("/submit"))
     public ResponseEntity<QuizResultDTO> submitQuiz(@RequestBody SubmitQuestionListDTO submitQuestionListDTO){
         return ResponseEntity
                 .status(HttpStatus.CREATED)

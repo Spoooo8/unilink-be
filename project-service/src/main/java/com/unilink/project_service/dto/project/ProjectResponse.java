@@ -17,8 +17,6 @@ public class ProjectResponse {
     private Long id;
     private String title;
     private List<String> skillRequired;
-    private LocalDate endDate;
+    private LocalDate applicationDeadline;
     private String imageUrl;
-    private String hostImage;
-    private String description;
 }

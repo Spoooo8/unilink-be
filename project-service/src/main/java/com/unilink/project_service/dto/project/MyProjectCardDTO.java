@@ -14,6 +14,5 @@ import java.util.List;
 public class MyProjectCardDTO {
     private Long id;
     private String title;
-    private List<String> images;
-    private String hostedBy;
+    private String description;
 }

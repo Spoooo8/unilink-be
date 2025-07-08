@@ -9,7 +9,11 @@ import java.util.List;
 
 @Repository
 public interface UserSkillMappingRepostiory extends JpaRepository<UserSkillMapping, Long> {
-    List<UserSkillMapping> findByUserId(Long id);
 
-    void deleteByUserId(Long userId);
+
+
+
+    List<UserSkillMapping> findByUserDetailsId(Long id);
+
+    void deleteByUserDetailsId(Long userId);
 }

@@ -1,7 +1,7 @@
 package com.unilink.auth_server.config;
 
-import com.unilink.auth_server.entity.AuthProfile;
-import com.unilink.auth_server.repository.AuthProfileRepository;
+import com.unilink.auth_server.entity.Users;
+import com.unilink.auth_server.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,15 +18,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UnilinkUserDetailsService implements UserDetailsService {
 
-    private final AuthProfileRepository authProfileRepository;
+    private final UsersRepository usersRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AuthProfile authProfile = authProfileRepository.findByEmail(username).orElseThrow(() -> new
+        Users user = usersRepository.findByEmail(username).orElseThrow(() -> new
                 UsernameNotFoundException("User details not found for the user: " + username));
-        List<GrantedAuthority> authorities = authProfile.getAuthorities().stream().map(authority -> new
+        List<GrantedAuthority> authorities = user.getAuthorities().stream().map(authority -> new
                 SimpleGrantedAuthority(authority.getName())).collect(Collectors.toList());
-        return new User(authProfile.getEmail(), authProfile.getPwd(), authorities);
+        return new User(user.getEmail(), user.getPassword(), authorities);
     }
 
 }

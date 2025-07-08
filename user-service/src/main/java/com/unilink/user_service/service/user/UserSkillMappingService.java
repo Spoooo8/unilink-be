@@ -5,9 +5,11 @@ import com.unilink.common.dto.ApiResponse;
 import com.unilink.common.exceptions.UnilinkResourceNotFoundException;
 import com.unilink.user_service.dto.user.UserSkillMappingDto;
 import com.unilink.user_service.entity.user.Skill;
+import com.unilink.user_service.entity.user.UserDetails;
 import com.unilink.user_service.entity.user.UserSkillMapping;
 import com.unilink.user_service.entity.user.Users;
 import com.unilink.user_service.repository.user.SkillRepository;
+import com.unilink.user_service.repository.user.UserDetailsRepository;
 import com.unilink.user_service.repository.user.UserSkillMappingRepostiory;
 import com.unilink.user_service.repository.user.UsersRepository;
 import org.modelmapper.ModelMapper;
@@ -22,7 +24,7 @@ public class UserSkillMappingService {
     Logger logger = LoggerFactory.getLogger(UserSkillMappingService.class);
     ApiResponse response = new ApiResponse();
     @Autowired
-    private UsersRepository usersRepository;
+    private UserDetailsRepository userDetailsRepository;
     @Autowired
     private SkillRepository skillRepository;
     @Autowired
@@ -31,7 +33,7 @@ public class UserSkillMappingService {
     private ModelMapper modelMapper;
 
     public ApiResponse addUserSkillMapping(UserSkillMappingDto request) {
-        Users existingUser = usersRepository.findById(request.getUserId())
+        UserDetails existingUser = userDetailsRepository.findByUserId(request.getUserId())
                 .orElseThrow(() -> new UnilinkResourceNotFoundException("User not found with id: " + request.getUserId()));
 
         List<Long> skillIds = request.getSkillIds();
@@ -42,7 +44,7 @@ public class UserSkillMappingService {
                     .orElseThrow(() -> new UnilinkResourceNotFoundException("Skill not found with id: " + id));
 
             UserSkillMapping userSkillMapping = new UserSkillMapping();
-            userSkillMapping.setUser(existingUser);
+            userSkillMapping.setUserDetails(existingUser);
             userSkillMapping.setSkill(existingSkill);
             userSkillMapping.setIsPrimarySkill(request.getIsPrimarySkill());
             userSkillMapping.setInterestLevel(request.getInterestLevel());

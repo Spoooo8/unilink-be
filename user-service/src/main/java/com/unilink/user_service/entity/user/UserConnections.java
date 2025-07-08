@@ -7,9 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
-
 @Entity
 @Getter
 @Setter
@@ -17,20 +14,23 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Table(name = "tbl_user_connections", schema = "users")
 public class UserConnections extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(nullable = false)
     private String connectionType;
+
     @Column(nullable = false)
     private String status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Users user;
+    @JoinColumn(name = "user_details_id", nullable = false)
+    private UserDetails userDetails;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "connected_user_id", nullable = false)
-    private Users connectedUser;
+    @JoinColumn(name = "connected_user_details_id", nullable = false)
+    private UserDetails connectedUserDetails;
 
 }

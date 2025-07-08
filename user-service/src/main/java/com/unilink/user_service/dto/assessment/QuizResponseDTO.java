@@ -14,8 +14,6 @@ import java.sql.Time;
 public class QuizResponseDTO {
     private Long id;
     private String name;
-    private String icon;
-    private String color;
     private Time timer;
     private Boolean isExternalHost;
 

@@ -21,13 +21,10 @@ public class CollaborateController {
         collaborateService.joinProject(projectId, joinProjectDTO);
     }
 
-    @GetMapping("/roles/dropdown")
-    public List<RoleDropDownDTO> getRolesDropDown(){
-     return collaborateService.getRoleDropDownDTO();
-    }
-
     @GetMapping("/{projectId}/collaborators")
     public List<CollaboratorsDTO> getCollaborators(@PathVariable("projectId") Long projectId){
         return collaborateService.getCollaborators(projectId);
     }
+
+
 }

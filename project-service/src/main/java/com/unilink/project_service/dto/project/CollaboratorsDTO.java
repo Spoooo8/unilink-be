@@ -11,7 +11,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CollaboratorsDTO {
     private Long id;
+    private Long collaborateId;
     private String name;
-    private Double projectRating;
-    private Double skillScore;
+    private String projectRating;
+    private String skillScore;
 }

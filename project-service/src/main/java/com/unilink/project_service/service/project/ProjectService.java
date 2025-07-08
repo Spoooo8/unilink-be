@@ -1,14 +1,19 @@
 package com.unilink.project_service.service.project;
 
-import com.unilink.common.config.UserContext;
 import com.unilink.common.dto.ApiResponse;
+import com.unilink.common.exceptions.UnilinkResourceNotFoundException;
+import com.unilink.project_service.config.UserContextId;
 import com.unilink.project_service.dto.project.*;
 import com.unilink.project_service.entity.project.Project;
+import com.unilink.project_service.entity.project.SkillRequired;
 import com.unilink.project_service.entity.project.Team;
+import com.unilink.project_service.entity.project.TeamMember;
 import com.unilink.project_service.repository.project.ProjectRepository;
 import com.unilink.project_service.repository.project.SkillRequiredRepository;
+import com.unilink.project_service.repository.project.TeamMemberRepository;
 import com.unilink.project_service.repository.project.TeamRepository;
 import com.unilink.project_service.utils.ProjectStatus;
+import com.unilink.project_service.utils.TeamMemberRole;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -17,9 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.module.ResolutionException;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -30,123 +35,145 @@ public class ProjectService {
     ApiResponse response = new ApiResponse();
     @Autowired
     private ProjectRepository projectRepository;
-//    @Autowired
-//    private UsersRepository usersRepository;
     @Autowired
     private SkillRequiredRepository skillRequiredRepository;
     @Autowired
     private ModelMapper modelMapper;
     @Autowired
     private TeamRepository teamRepository;
-//    @Autowired
-//    private SkillRepository skillRepository;
-    @Autowired
-    private UserContext userContext;
 
+    @Autowired
+    private UserContextId userContext;
+
+    @Autowired
+    private TeamMemberRepository teamMemberRepository;
+
+
+    public ProjectDTO addProject(ProjectDTO request) {
+        Project newProject = new Project();
+        newProject.setUserId(Long.valueOf(userContext.getUserId()));
+        newProject.setProjectStatus(ProjectStatus.Ongoing);
+        newProject.setTitle(request.getTitle());
+        newProject.setRepoLink(request.getRepoLink());
+        newProject.setDescription(request.getDescription());
+        newProject.setImageUrl(request.getImageUrl());
+        newProject.setStartDate(request.getStartDate());
+        newProject.setEndDate(request.getEndDate());
+        newProject.setApplicationDeadline(request.getApplicationDeadline());
+        newProject.setComplexityLevel(request.getComplexityLevel());
+        newProject.setProjectVisibility(request.getProjectVisibility());
+
+        // First, create and save the team
+        Team newTeam = new Team();
+        newTeam.setTeamSize(request.getTeamSize());
+        newTeam.setTeamCode(generateUniqueTeamCode());
+        teamRepository.save(newTeam);
+
+        newProject.setTeam(newTeam);
+
+        TeamMember newTeamMember = new TeamMember();
+        newTeamMember.setTeam(newTeam);
+        newTeamMember.setUserId(Long.valueOf(userContext.getUserId()));
+        newTeamMember.setTeamMemberRole(TeamMemberRole.host);
+        teamMemberRepository.save(newTeamMember);
+
+        // ✅ Save the project first
+        projectRepository.save(newProject);
+
+        // Now, save the required skills
+        if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
+            for (Integer skillId : request.getSkillIds()) {
+                SkillRequired skillRequired = new SkillRequired();
+                skillRequired.setProject(newProject); // Now newProject is persistent and has an ID
+                skillRequired.setSkillId(skillId);
+                skillRequired.setProficiencyLevel("Basic");
+
+                skillRequiredRepository.save(skillRequired);
+            }
+        }
+
+        return request;
+    }
+
+    public List<MyProjectCardDTO> getMyProjectCard() {
+        List<TeamMember> member = teamMemberRepository.findByUserId(Long.valueOf(userContext.getUserId()));
+        List<Long> teamIds = member.stream()
+                .map(m -> m.getTeam().getId())
+                .collect(Collectors.toList());
+        List<Project> myProjectCard =  projectRepository.findAllByTeamIdIn(teamIds);
+        List<MyProjectCardDTO> myProjectCardDTOs = myProjectCard.stream()
+                .map(project -> {
+                    MyProjectCardDTO dto = new MyProjectCardDTO();
+                    dto.setId(project.getId());
+                    dto.setDescription(project.getDescription());
+                    dto.setTitle(project.getTitle());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        return myProjectCardDTOs;
+    }
+
+    private String generateUniqueTeamCode() {
+        // Generate UUID and take first 8 characters
+        return "TEAM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
 
     public List<ProjectResponse> getLayoutProjectCard() {
-        List<Project> projects = projectRepository.findByIsDeactivated(false);
-        return null;
-//        return projects.stream()
-//                .map(project -> {
-//                    ProjectResponse projectResponse = modelMapper.map(project, ProjectResponse.class);
-//                    Users user = usersRepository.findById(project.getUserId()).orElseThrow(
-//                            () -> new ResolutionException("User not found for project: " + project.getId())
-//                    );
-//                    projectResponse.setHostImage(user.getProfilePicture());
-//                    List<SkillRequired> skillRequired = skillRequiredRepository.findByProjectIdAndIsDeactivated(project.getId(), false);
+        List<TeamMember> teamMembers = teamMemberRepository.findByUserId(Long.valueOf(userContext.getUserId()));
+        Set<Long> teamIds = teamMembers.stream().map(member -> member.getTeam().getId()).collect(Collectors.toSet());
+        List<Project> projects = projectRepository.findByTeamIdNotInAndIsDeactivated(teamIds,false);
+        return projects.stream()
+                .map(project -> {
+                    ProjectResponse projectResponse = modelMapper.map(project, ProjectResponse.class);
+                    List<SkillRequired> skillRequired = skillRequiredRepository.findByProjectIdAndIsDeactivated(project.getId(), false);
 //                    List<Skill> skills = skillRequired.stream().map(SkillRequired::getSkill).toList();
 //                    List<String> skillNames = skills.stream().map(
 //                            Skill::getName
 //                    ).toList();
 //                    projectResponse.setSkillRequired(skillNames);
-//                    projectResponse.setDescription(project.getDescription());
-//                    return projectResponse;
-//                })
-//                .collect(Collectors.toList());
+                    projectResponse.setSkillRequired(null);
+                    projectResponse.setApplicationDeadline(project.getApplicationDeadline());
+                    return projectResponse;
+                })
+                .collect(Collectors.toList());
     }
 
-    public List<MyProjectCardDTO> getMyProjectCard() {
-        List<Project> myProjectCard = projectRepository.findByUserIdAndIsDeactivated(Long.valueOf(userContext.getUserId()), false);
-        Long userIds =1L;
-//        Optional<Users> user = usersRepository.findById(userIds);
-//        List<MyProjectCardDTO> myProjectCardDTOs = myProjectCard.stream()
-//                .map(project -> {
-//                    MyProjectCardDTO dto = modelMapper.map(project, MyProjectCardDTO.class);
-//                    dto.setImages(Collections.singletonList(user.get().getProfilePicture()));
-//                    dto.setHostedBy(user.get().getName());
-//                    return dto;
-//                })
-//                .collect(Collectors.toList());
-//
-//        return myProjectCardDTOs;
-        return null;
-    }
 
     public ProjectDescriptionDTO getProjectDescriptionById(Long id) {
         Project project = projectRepository.findByIdAndIsDeactivated(id, false).orElseThrow(
                 () -> new ResolutionException("Project not found with id: " + id)
         );
-        LocalDate startDate = project.getStartDate();
-        LocalDate endDate = project.getEndDate();
-        Double durationInMonths = (double) ChronoUnit.MONTHS.between(startDate, endDate);
-        ProjectDescriptionDTO projectDescriptionDTO = modelMapper.map(project, ProjectDescriptionDTO.class);
-        projectDescriptionDTO.setDuration(durationInMonths);
+        ProjectDescriptionDTO projectDescriptionDTO = new ProjectDescriptionDTO();
+        projectDescriptionDTO.setId(project.getId());
         projectDescriptionDTO.setTitle(project.getTitle());
-        projectDescriptionDTO.setProjectType(project.getProjectType());
-//        Users user = usersRepository.findById(project.getUserId()).orElseThrow(
-//                () -> new ResolutionException("User not found for project: " + project.getId())
-//        );
+        projectDescriptionDTO.setHostName(null);
+        projectDescriptionDTO.setDescription(project.getDescription());
+        projectDescriptionDTO.setApplicationDeadline(String.valueOf(project.getApplicationDeadline()));
+        projectDescriptionDTO.setStartDate(String.valueOf(project.getStartDate()));
+        projectDescriptionDTO.setEndDate(String.valueOf(project.getEndDate()));
+        projectDescriptionDTO.setDuration(null);
+        projectDescriptionDTO.setSkills(null);
+        projectDescriptionDTO.setComplexityLevel(String.valueOf(project.getComplexityLevel()));
+        projectDescriptionDTO.setTeamSize(project.getTeam().getTeamSize()
+        );
 
         return projectDescriptionDTO;
     }
 
-    public ProjectDTO addProject(ProjectDTO projectDto) {
-        Project project = modelMapper.map(projectDto, Project.class);
+    public HostIdDTO getHostId(Long projectId) {
+        HostIdDTO hostIdDTO = new HostIdDTO();
+        Project project = projectRepository.findById(projectId).orElseThrow(()-> new UnilinkResourceNotFoundException("project not found"));
+        TeamMember teamMember = teamMemberRepository.findByUserIdAndTeamId(Long.valueOf(userContext.getUserId()),project.getTeam().getId());
+        hostIdDTO.setProjectId(projectId);
+        hostIdDTO.setUserId(Long.valueOf(userContext.getUserId()));
+        hostIdDTO.setHostId(project.getUserId());
+        if (teamMember != null) {
+            hostIdDTO.setTeamMemberId(teamMember.getId());
+        } else {
+            hostIdDTO.setTeamMemberId(null);
 
-        Team team = new Team();
-        team.setTeamSize(projectDto.getTeamSize());
-        teamRepository.save(team);
-
-        project.setTeam(team);
-        project.setUserId(1L); // Example fixed user, adjust as needed
-        project.setProjectStatus(ProjectStatus.Ongoing);
-        projectRepository.save(project);
-
-        // Handle skill requirements
-//        if (projectDto.getSkillIds() != null && !projectDto.getSkillIds().isEmpty()) {
-//            for (Long skillId : projectDto.getSkillIds()) {
-//                Skill skill = skillRepository.findById(skillId)
-//                        .orElseThrow(() -> new RuntimeException("Skill not found with id: " + skillId));
-//
-//                SkillRequired skillRequired = new SkillRequired();
-//                skillRequired.setProject(project);
-//                skillRequired.setSkill(skill);
-//                skillRequired.setProficiencyLevel("Basic");  // or get from DTO if available
-//
-//                skillRequiredRepository.save(skillRequired);
-//            }
-//        }
-
-
-        return projectDto;
-    }
-
-
-    public List<OngoingTitlesDTO> getProjectTitles() {
-        List<Project> projects = projectRepository.findAll();
-        List<OngoingTitlesDTO> titles = projects.stream()
-                .map(project -> new OngoingTitlesDTO(project.getId(),project.getTitle())) // Assuming 'getTitle()' method exists in 'Project'
-                .collect(Collectors.toList());
-
-        return titles;
-    }
-
-    public List<SkillDropdownDTO> getSkillDropdownList() {
-//        List<Skill> skills = skillRepository.findByIsDeactivated(false);
-//        return skills.stream()
-//                .map(skill -> modelMapper.map(skill, SkillDropdownDTO.class))
-//                .collect(Collectors.toList());
-        return null;
+        }
+        return hostIdDTO;
     }
 }

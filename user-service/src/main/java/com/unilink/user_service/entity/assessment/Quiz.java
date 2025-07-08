@@ -21,7 +21,5 @@ public class Quiz extends BaseEntity {
     private Long id;
     private String name;
     private Time timer;
-    private String icon;
-    private String color;
     private Boolean isExternalHost;
 }

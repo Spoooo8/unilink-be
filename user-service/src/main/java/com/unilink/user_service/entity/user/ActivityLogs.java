@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Entity
 @Getter
 @Setter
@@ -15,12 +14,13 @@ import lombok.Setter;
 @NoArgsConstructor
 @Table(name = "tbl_activity_logs", schema = "users")
 public class ActivityLogs extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Users user;
+    @JoinColumn(name = "user_details_id", nullable = false)
+    private UserDetails userDetails;
 
 }

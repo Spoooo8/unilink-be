@@ -22,9 +22,7 @@ import java.time.LocalDate;
         private Long id;
         private Long userId;
         private LocalDate requestDate;
-        private String status;
         private String message;
-        private String roleRequested;
         private TeamMemberRole role;
         @ManyToOne(cascade = CascadeType.ALL)
         @JoinColumn(name = "project_id")

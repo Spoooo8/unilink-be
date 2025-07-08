@@ -11,11 +11,22 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/version-control")
+@RequestMapping
 public class VersionControlController {
 
     @Autowired
     private VersionControlService versionControlService;
+
+    @PostMapping("{projectId}/clone")
+    public ResponseEntity<String> cloneRepository(@PathVariable("projectId") Long projectId) throws GitAPIException, IOException {
+        versionControlService.cloneRepository(projectId);
+        return ResponseEntity.ok("✅ Repository cloned successfully.");
+    }
+
+    @GetMapping("{projectId}/history")
+    public List<String> getHistory(@PathVariable("projectId") Long projectId) throws GitAPIException, IOException, IOException {
+        return versionControlService.getCommitHistory(projectId);
+    }
 
     @PostMapping("/init/{projectId}")
     public void initRepo(@PathVariable String projectId) throws GitAPIException {
@@ -32,16 +43,8 @@ public class VersionControlController {
         versionControlService.createBranch(projectId, branchName);
     }
 
-    @GetMapping("/history")
-    public List<String> getHistory(@RequestParam String remoteUrl) throws GitAPIException, IOException, IOException {
-        return versionControlService.getCommitHistory(remoteUrl);
-    }
 
-    @PostMapping("/clone")
-    public ResponseEntity<String> cloneRepository(
-            @RequestParam String remoteUrl) throws GitAPIException, IOException {
-            versionControlService.cloneRepository( remoteUrl);
-            return ResponseEntity.ok("✅ Repository cloned successfully.");
-    }
+
+
 }
 

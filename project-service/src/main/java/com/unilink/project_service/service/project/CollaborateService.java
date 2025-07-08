@@ -1,17 +1,16 @@
 package com.unilink.project_service.service.project;
 
+import com.unilink.project_service.config.UserContextId;
 import com.unilink.project_service.dto.UserResponse;
 import com.unilink.project_service.dto.project.CollaboratorsDTO;
 import com.unilink.project_service.dto.project.JoinProjectDTO;
 import com.unilink.project_service.dto.project.RoleDropDownDTO;
 import com.unilink.project_service.entity.project.Collaborate;
-import com.unilink.project_service.entity.project.MemberRole;
 import com.unilink.project_service.entity.project.Project;
 import com.unilink.project_service.repository.project.CollaborateRepository;
-import com.unilink.project_service.repository.project.MemberRoleRepository;
 import com.unilink.project_service.repository.project.ProjectRepository;
-import com.unilink.project_service.repository.project.RoleRepository;
 import com.unilink.project_service.service.client.UserFeignClient;
+import com.unilink.project_service.utils.TeamMemberRole;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,11 +27,6 @@ public class CollaborateService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private MemberRoleRepository memberRoleRepository;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -40,26 +34,23 @@ public class CollaborateService {
     @Autowired
     private UserFeignClient userFeignClient;
 
+    @Autowired
+    private UserContextId userContext;
+
 
 
     public void joinProject(Long projectId, JoinProjectDTO joinProjectDTO) {
+        Long userId = Long.valueOf(userContext.getUserId());
         Collaborate newCollaborator = new Collaborate();
         Project project = projectRepository.findById(projectId).orElseThrow();
         newCollaborator.setProject(project);
-        newCollaborator.setUserId(1L);
+        newCollaborator.setUserId(userId);
         newCollaborator.setRequestDate(LocalDate.now());
         newCollaborator.setMessage(joinProjectDTO.getMessage());
-//        MemberRole roleRequested = memberRoleRepository.findById(2L).orElseThrow();
-//        newCollaborator.setRoleRequested(roleRequested.getRoleName());
-//       newCollaborator.setRole(TeamMemberRole.teamMember);
+        newCollaborator.setRole(TeamMemberRole.teamMember);
         collaborateRepository.save(newCollaborator);
     }
-    public List<RoleDropDownDTO> getRoleDropDownDTO(){
-        List<MemberRole> roles = memberRoleRepository.findAll();
-        return roles.stream()
-                .map(skill -> modelMapper.map(skill, RoleDropDownDTO.class))
-                .collect(Collectors.toList());
-    }
+
 
     public List<CollaboratorsDTO> getCollaborators(Long projectId){
 
@@ -68,10 +59,11 @@ public class CollaborateService {
                 collaborators.stream()
                 .map(collaborator -> {
 
-                        UserResponse user = userFeignClient.getUserById(1L);
+                    UserResponse user = userFeignClient.getUserById(collaborator.getUserId());
                    return new CollaboratorsDTO(
-                        collaborator.getId(),
-                         user.getName(), 2.0,2.0
+                        user.getId(),
+                           collaborator.getId(),
+                         user.getName(), user.getProjectRating(),user.getSkillScore()
                  );})
                 .collect(Collectors.toList());
 

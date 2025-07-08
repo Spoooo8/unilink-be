@@ -14,6 +14,16 @@ import java.util.List;
 public class ProjectController {
     Logger logger = LoggerFactory.getLogger(ProjectController.class);
 
+    @PostMapping("/add")
+    public ProjectDTO addProject(@RequestBody ProjectDTO projectDto){
+        return projectService.addProject(projectDto);
+    }
+
+    @GetMapping("/myProjects")
+    public List<MyProjectCardDTO> getMyProjectCards(){
+        return projectService.getMyProjectCard();
+    }
+
     @Autowired
     private ProjectService projectService;
     @GetMapping("/layout/cards")
@@ -28,25 +38,8 @@ public class ProjectController {
         return projectService.getProjectDescriptionById(id);
     }
 
-    @GetMapping("/ongoing/titles")
-    public List<OngoingTitlesDTO> getProjectTitlesById(){
-        return projectService.getProjectTitles();
+    @GetMapping("/{projectId}/host")
+    public HostIdDTO getHostId(@PathVariable("projectId") Long projectId){
+        return projectService.getHostId(projectId);
     }
-
-    @GetMapping("/myProjectCard")
-    public List<MyProjectCardDTO> getMyProjectCards(){
-        return projectService.getMyProjectCard();
-    }
-
-    @PostMapping("/add")
-    public ProjectDTO addProject(@RequestBody ProjectDTO projectDto){
-        return projectService.addProject(projectDto);
-    }
-
-    @GetMapping("/skill/dropdown")
-    public List<SkillDropdownDTO> getSkillDropdownList(){
-        return projectService.getSkillDropdownList();
-    }
-
-
 }

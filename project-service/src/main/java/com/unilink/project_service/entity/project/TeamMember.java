@@ -21,14 +21,7 @@ public  class TeamMember {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long userId;
-    private LocalDate lastActive;
-    private Integer contributionLevel;
     private TeamMemberRole teamMemberRole;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_role_id", referencedColumnName = "id", nullable = false)
-    private MemberRole memberRole;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", referencedColumnName = "id", nullable = false)
     private Team team;
